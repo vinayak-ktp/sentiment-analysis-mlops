@@ -91,3 +91,6 @@ target/
 # Project specific
 sketch.txt
 .venv/
+# !src/data/
+reports/
+models/
