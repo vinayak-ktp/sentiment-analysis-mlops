@@ -31,4 +31,5 @@ dependencies = [
     "setuptools<70",
     "xgboost>=3.2.0",
     "python-dotenv>=1.2.2",
+    "pathspec==0.12.1",
 ]
