@@ -92,6 +92,7 @@ target/
 sketch.txt
 .venv/
 # !src/data/
-# reports/
+reports/*
+!reports/.gitkeep
 models/*
 # .dvc
