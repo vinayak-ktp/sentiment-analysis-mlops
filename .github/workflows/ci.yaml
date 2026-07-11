@@ -6,6 +6,11 @@ jobs:
   project-testing:
     runs-on: ubuntu-latest
 
+    env:
+      DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
+      DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
+      DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
     steps:
       - name: checkout code
         uses: actions/checkout@v3
@@ -28,9 +33,17 @@ jobs:
           pip install -r requirements.txt
 
       - name: run pipeline
-        env:
-          DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
-          DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
-          DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
         run: |
           dvc repro
+
+      - name: Run model tests
+        run: |
+          python -m unittest tests/test_model.py
+
+      - name: Promote model to production
+        if: success()
+        run: python scripts/promote_model.py
+
+      - name: Run Flask app tests
+        if: success()
+        run: python -m unittest tests/test_flask_app.py
