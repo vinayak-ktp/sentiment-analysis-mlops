@@ -2,14 +2,15 @@ name: CI Pipeline
 
 on: push
 
+env:
+  DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
+  DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
+  DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
+
 jobs:
   # JOB 1: Run DVC Pipeline, Test Model, and Promote
   machine-learning-pipeline:
     runs-on: ubuntu-latest
-    env:
-      DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
-      DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
-      DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
 
     steps:
       - name: Checkout code
