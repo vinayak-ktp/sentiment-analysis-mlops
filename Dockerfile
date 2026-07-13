@@ -5,13 +5,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY flask_app/requirements.txt .
+COPY app/requirements.txt .
 
 RUN pip install -r requirements.txt
 
 RUN python -m nltk.downloader stopwords wordnet
 
-COPY flask_app/ .
+COPY app/ .
 
 COPY models/vectorizer.pkl ./models/vectorizer.pkl
 
