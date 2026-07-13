@@ -3,19 +3,19 @@ name: CI Pipeline
 on: push
 
 jobs:
-  project-testing:
+  # JOB 1: Run DVC Pipeline, Test Model, and Promote
+  machine-learning-pipeline:
     runs-on: ubuntu-latest
-
     env:
       DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
       DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
       DAGSHUB_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
 
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: setup python
+      - name: Setup python
         uses: actions/setup-python@v2
         with:
           python-version: "3.12"
@@ -28,28 +28,55 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: install dependencies
-        run: |
-          pip install -r requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
-      - name: run pipeline
-        run: |
-          dvc repro
+      - name: Run pipeline
+        run: dvc repro
 
       - name: Run model tests
-        run: |
-          python -m unittest tests/test_model.py
+        run: python -m unittest tests/test_model.py
 
       - name: Promote model to production
-        if: success()
         run: python scripts/promote_model.py
 
+  # JOB 2: Test the Flask Application
+  app-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
       - name: Run Flask app tests
-        if: success()
         run: python -m unittest tests/test_flask_app.py
 
+  # JOB 3: Build and Push Docker Image to ECR
+  build-and-push-docker:
+    needs: [machine-learning-pipeline, app-testing] # Waits for both jobs to pass
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
       - name: Login to AWS ECR
-        if: success()
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -57,8 +84,7 @@ jobs:
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.ECR_REPOSITORY }}:latest .
+        run: docker build -t ${{ secrets.ECR_REPOSITORY }}:latest .
 
       - name: Tag Docker image
         run: |
@@ -69,5 +95,4 @@ jobs:
         run: docker info
 
       - name: Push Docker image to ECR
-        run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+        run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest

@@ -95,4 +95,5 @@ sketch.txt
 reports/*
 !reports/.gitkeep
 models/*
+*.bak
 # .dvc
