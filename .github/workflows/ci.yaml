@@ -35,6 +35,12 @@ jobs:
       - name: Run pipeline
         run: dvc repro
 
+      - name: Upload Model and Vectorizer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ml-models
+          path: models/
+
       - name: Run model tests
         run: python -m unittest tests/test_model.py
 
@@ -49,6 +55,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Download Model and Vectorizer
+        uses: actions/download-artifact@v4
+        with:
+          name: ml-models
+          path: models/
 
       - name: Setup python
         uses: actions/setup-python@v2
@@ -77,6 +89,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Download Model and Vectorizer for Docker Context
+        uses: actions/download-artifact@v4
+        with:
+          name: ml-models
+          path: models/
 
       - name: Login to AWS ECR
         run: |
