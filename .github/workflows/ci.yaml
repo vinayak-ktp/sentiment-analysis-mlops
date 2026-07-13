@@ -43,6 +43,7 @@ jobs:
 
   # JOB 2: Test the Flask Application
   app-testing:
+    needs: machine-learning-pipeline # Waits for the first job to pass
     runs-on: ubuntu-latest
 
     steps:
