@@ -13,26 +13,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
+      - name: Cache pip Dependencies
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      - name: Run pipeline
+      - name: Run Pipeline
         run: dvc repro
 
       - name: Upload Model and Vectorizer
@@ -41,10 +41,10 @@ jobs:
           name: ml-models
           path: models/
 
-      - name: Run model tests
+      - name: Run Model Tests
         run: python -m unittest tests/test_model.py
 
-      - name: Promote model to production
+      - name: Promote Model to Production
         run: python scripts/promote_model.py
 
   # JOB 2: Test the Flask Application
@@ -53,8 +53,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Download Model and Vectorizer
         uses: actions/download-artifact@v4
@@ -62,23 +62,26 @@ jobs:
           name: ml-models
           path: models/
 
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
+      - name: Cache pip Dependencies
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: pip install -r requirements.txt
 
-      - name: Run Flask app tests
+      - name: Install NLTK Data
+        run: python -m nltk.downloader stopwords wordnet
+
+      - name: Run Flask App Tests
         run: python -m unittest tests/test_flask_app.py
 
   # JOB 3: Build and Push Docker Image to ECR
@@ -87,10 +90,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Download Model and Vectorizer for Docker Context
+      - name: Download Model and Vectorizer
         uses: actions/download-artifact@v4
         with:
           name: ml-models
@@ -103,10 +106,10 @@ jobs:
           aws configure set region ${{ secrets.AWS_REGION }}
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Build Docker image
+      - name: Build Docker Image
         run: docker build -t ${{ secrets.ECR_REPOSITORY }}:latest .
 
-      - name: Tag Docker image
+      - name: Tag Docker Image
         run: |
           docker tag ${{ secrets.ECR_REPOSITORY }}:latest \
           ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
@@ -114,5 +117,5 @@ jobs:
       - name: Check Docker Authentication
         run: docker info
 
-      - name: Push Docker image to ECR
+      - name: Push Docker Image to ECR
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
