@@ -1,9 +1,9 @@
 {
-    "sql_server": {
-      "server": "localhost",
-      "database": "Capstone",
-      "table": "dbo.first",
-      "username": "",
-      "pass":""
-    }
+  "sql_server": {
+    "server": "localhost",
+    "database": "Sentanal",
+    "table": "dbo.first",
+    "username": "",
+    "pass": ""
   }
+}

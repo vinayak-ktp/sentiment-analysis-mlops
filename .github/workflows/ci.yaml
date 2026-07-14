@@ -49,7 +49,7 @@ jobs:
 
   # JOB 2: Test the Flask Application
   app-testing:
-    needs: machine-learning-pipeline # Waits for the first job to pass
+    needs: machine-learning-pipeline
     runs-on: ubuntu-latest
 
     steps:
@@ -86,7 +86,7 @@ jobs:
 
   # JOB 3: Build and Push Docker Image to ECR
   build-and-push-docker:
-    needs: [machine-learning-pipeline, app-testing] # Waits for both jobs to pass
+    needs: app-testing
     runs-on: ubuntu-latest
 
     steps:
@@ -119,3 +119,36 @@ jobs:
 
       - name: Push Docker Image to ECR
         run: docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY }}:latest
+
+  # Job 4: Deploy the App on an EKS cluster
+  deploy-on-eks:
+    needs: build-and-push-docker
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set region ${{ secrets.AWS_REGION }}
+
+      - name: Set Up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: "latest"
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --region us-east-1 --name flask-app-cluster
+
+      - name: Create Kubernetes Secret
+        run: |
+          kubectl create secret generic sentanal-secret \
+          --from-literal=DAGSHUB_TOKEN=$DAGSHUB_TOKEN --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
