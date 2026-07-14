@@ -17,8 +17,10 @@ spec:
       containers:
         - name: flask-app
           image: 595868460079.dkr.ecr.us-east-1.amazonaws.com/flask-app
+
           ports:
             - containerPort: 5000
+
           resources:
             requests:
               memory: "256Mi"
@@ -26,9 +28,25 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "1"
+
           env:
             - name: DAGSHUB_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: sentanal-secret
                   key: DAGSHUB_TOKEN
+
+            - name: DAGSHUB_REPO_OWNER
+              valueFrom:
+                secretKeyRef:
+                  name: sentanal-secret
+                  key: DAGSHUB_REPO_OWNER
+
+            - name: DAGSHUB_REPO_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: sentanal-secret
+                  key: DAGSHUB_REPO_NAME
+
+            - name: MLFLOW_TRACKING_URI
+              value: "https://dagshub.com/$(DAGSHUB_REPO_OWNER)/$(DAGSHUB_REPO_NAME).mlflow"

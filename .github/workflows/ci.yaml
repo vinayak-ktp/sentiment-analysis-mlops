@@ -146,7 +146,10 @@ jobs:
       - name: Create Kubernetes Secret
         run: |
           kubectl create secret generic sentanal-secret \
-          --from-literal=DAGSHUB_TOKEN=$DAGSHUB_TOKEN --dry-run=client -o yaml | kubectl apply -f -
+            --from-literal=DAGSHUB_TOKEN=${{ secrets.DAGSHUB_TOKEN }} \
+            --from-literal=DAGSHUB_REPO_OWNER=${{ secrets.DAGSHUB_REPO_OWNER }} \
+            --from-literal=DAGSHUB_REPO_NAME=${{ secrets.DAGSHUB_REPO_NAME }} \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Deploy to EKS
         run: kubectl apply -f k8s/
