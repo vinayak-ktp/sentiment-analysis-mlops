@@ -1,6 +1,16 @@
 name: CI Pipeline
 
-on: push
+on: 
+  push:
+    paths:
+      - "src/**"
+      - "app/**"
+      - "tests/**"
+      - "scripts/**"
+      - "k8s/**"
+      - ".github/**"
+      - "**/*.yaml"
+      - "Dockerfile"
 
 env:
   DAGSHUB_REPO_OWNER: ${{ secrets.DAGSHUB_REPO_OWNER }}
